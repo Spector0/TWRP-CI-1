@@ -4,14 +4,14 @@
 export TWRP_MANIFEST="https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp"
 export TWRP_BRANCH="twrp-12.1"
 #export TWRP_BRANCH="twrp-test"
-export DT_LINK="https://github.com/TeamWin/android_device_oneplus_cheeseburger_dumpling.git -b android-12.1"
+export DT_LINK="https://github.com/Spector0/Device_Oneplus_Oscar_TWRP -b stable"
 
-export DEVICE="cheeseburger_dumpling"
+export DEVICE="oscar"
 export OEM="oneplus"
 #export PLATFORM="msm8998"
-export TARGET="recoveryimage"
-export TW_DEVICE_VERSION="2"
-export OUTPUT="recovery.img"
+export TARGET="bootimage"
+#export TW_DEVICE_VERSION="2"
+export OUTPUT="boot.img"
 export FILENAME="twrp*.img"
 
 # Kernel Source
