@@ -21,8 +21,8 @@ jobs:
 
     docker:
       - image: ghcr.io/sushrut1101/docker:arch
-        cpu: 4
-        memory: 16G
+     
+       
 
     steps:
       - run:
