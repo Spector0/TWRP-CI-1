@@ -1,26 +1,85 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  say-hello:
-    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
-    docker:
-      - image: cimg/base:stable
-    # Add steps to the job
-    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
-    steps:
-      - checkout
-      - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
+  build:
+    working_directory: ~/work
+    environment:
+      MANIFEST: https://github.com/LineageOS/android.git -b lineage-20.0
+      DEVICE: CPH2381
+      OEM: oneplus
+      DT_LINK: https://github.com/ajaysinghsati/device_oneplus_CPH2381.git
+      DT_PATH: device/$OEM/$DEVICE
+      VT_LINK: https://github.com/ajaysinghsati/vendor_oneplus_CPH2381.git
+      VT_PATH: vendor/$OEM/$DEVICE
+      KT_LINK: https://github.com/OnePlus-sm6375-devices/android_kernel_oneplus_sm6375.git
+      PLATFORM: sm6375
+      KT_PATH: kernel/$OEM/$PLATFORM
+      TARGET: bacon
+      EXTRA_CMD: export SKIP_ABI_CHECKS=true
+      LUNCH_COMBO: lineage_CPH2381-userdebug
+      OUTPUT: PixelExperience*.zip
 
-# Invoke jobs via workflows
-# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
-workflows:
-  say-hello-workflow:
-    jobs:
-      - say-hello
+    docker:
+      - image: ghcr.io/sushrut1101/docker:arch
+        cpu: 8
+        memory: 32G
+
+    steps:
+      - run:
+          name: "Storage Checker Script"
+          command: |
+            df -h
+            lsblk
+            ls -l -a -h
+
+      - run:
+          name: "Sync Script"
+          command: |
+            echo "============================"
+            echo "Syncing The Sources..."
+            echo "============================"
+            mkdir -p ~/work
+            cd ~/work
+            repo init --depth=1 -u $MANIFEST
+            repo sync -j4 --force-sync --no-tags --no-clone-bundle
+            git clone $DT_LINK $DT_PATH
+            git clone $VT_LINK $VT_PATH
+            git clone $KT_LINK $KT_PATH
+            echo "============================"
+            echo "Syncing Complete!"
+            echo "============================"
+
+      - run:
+          name: "Build Script"
+          command: |
+            echo "============================"
+            echo "Starting the Build..."
+            echo "============================"
+            cd ~/work
+            $EXTRA_CMD
+            export USE_CCACHE=1
+            export CCACHE_EXEC=/usr/bin/ccache
+            ccache -M 50G
+            . build/envsetup.sh
+            lunch "$LUNCH_COMBO"
+            mka -j31 $TARGET
+
+      - run:
+          name: "Upload Script"
+          command: |
+            echo "============================"
+            echo "Uploading the Build..."
+            echo "============================"
+            cd ~/work
+            cd out/target/product/"$DEVICE"
+            ls -lh
+            pwd
+            chmod 777 *
+            curl --upload-file $(echo $OUTPUT) https://transfer.sh | tee link.txt && echo " "
+            echo " "
+            echo "============================"
+            echo "Build Uploaded!"
+            echo "Please see the link Below-  "
+            echo "----------------------------"
+            cat link.txt && echo " "
+            echo "============================"
